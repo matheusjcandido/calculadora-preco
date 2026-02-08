@@ -1,27 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrains = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Calculadora de Preço de Venda - Markup e Margem de Lucro Grátis",
-  description: "Calcule o preço ideal de venda dos seus produtos. Descubra markup, margem de lucro e composição do preço. Ideal para MEI, freelancers e pequenos negócios.",
-  keywords: "calculadora de preço, markup, margem de lucro, precificação, quanto cobrar, preço de venda, calculadora mei",
-  openGraph: {
-    title: "Calculadora de Preço de Venda - Markup e Margem",
-    description: "Calcule o preço ideal para seus produtos e serviços - 100% grátis!",
-    type: "website",
-  },
-  robots: "index, follow",
+  title: "Calculadora de Preço de Venda - Markup e Margem",
+  description: "Calcule o preço ideal para lucrar de verdade. Descubra markup, margem de lucro e composição do preço.",
+  keywords: "calculadora de preço, markup, margem de lucro, precificação, quanto cobrar",
 };
 
 export default function RootLayout({
@@ -31,9 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${outfit.variable} ${jetbrains.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

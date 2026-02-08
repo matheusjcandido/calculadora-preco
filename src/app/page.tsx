@@ -8,18 +8,12 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function formatPercent(value: number): string {
-  return value.toFixed(2) + '%';
-}
-
 export default function Home() {
   const [modo, setModo] = useState<Modo>('markup');
-  
-  // Inputs
   const [custoProduto, setCustoProduto] = useState<string>('');
-  const [despesasFixas, setDespesasFixas] = useState<string>('15'); // % sobre venda
-  const [despesasVarPct, setDespesasVarPct] = useState<string>('10'); // % sobre venda (impostos, comissões)
-  const [lucroDesejado, setLucroDesejado] = useState<string>('20'); // % sobre venda
+  const [despesasFixas, setDespesasFixas] = useState<string>('15');
+  const [despesasVarPct, setDespesasVarPct] = useState<string>('10');
+  const [lucroDesejado, setLucroDesejado] = useState<string>('20');
   const [precoVenda, setPrecoVenda] = useState<string>('');
   const [markupInput, setMarkupInput] = useState<string>('');
 
@@ -32,216 +26,179 @@ export default function Home() {
 
   const resultado = useMemo(() => {
     if (modo === 'markup') {
-      // Calcular preço de venda baseado no custo e percentuais desejados
       if (custo <= 0) return null;
-      
       const totalDespesas = despFixas + despVar + lucro;
-      if (totalDespesas >= 100) return { error: 'Total de despesas + lucro não pode ser ≥ 100%' };
-      
-      // Fórmula: Preço = Custo / (1 - (DF% + DV% + Lucro%) / 100)
+      if (totalDespesas >= 100) return { error: 'Total de despesas + lucro deve ser menor que 100%' };
       const divisor = 1 - (totalDespesas / 100);
       const precoCalculado = custo / divisor;
       const markup = ((precoCalculado - custo) / custo) * 100;
       const lucroRS = precoCalculado * (lucro / 100);
-      const despFixasRS = precoCalculado * (despFixas / 100);
-      const despVarRS = precoCalculado * (despVar / 100);
-      
-      return {
-        precoVenda: precoCalculado,
-        markup,
-        margemLucro: lucro,
-        lucroRS,
-        despFixasRS,
-        despVarRS,
-        custoTotal: custo + despFixasRS + despVarRS,
-      };
+      return { precoVenda: precoCalculado, markup, margemLucro: lucro, lucroRS, despFixasRS: precoCalculado * (despFixas / 100), despVarRS: precoCalculado * (despVar / 100) };
     } else if (modo === 'margem') {
-      // Calcular margem de lucro baseado em preço e custo
-      if (custo <= 0 || preco <= 0) return null;
-      if (preco <= custo) return { error: 'Preço de venda deve ser maior que o custo' };
-      
+      if (custo <= 0 || preco <= 0 || preco <= custo) return null;
       const lucroRS = preco - custo - (preco * despFixas / 100) - (preco * despVar / 100);
       const margemLucro = (lucroRS / preco) * 100;
       const markup = ((preco - custo) / custo) * 100;
-      
-      return {
-        precoVenda: preco,
-        markup,
-        margemLucro,
-        lucroRS,
-        despFixasRS: preco * despFixas / 100,
-        despVarRS: preco * despVar / 100,
-        custoTotal: custo + (preco * despFixas / 100) + (preco * despVar / 100),
-      };
+      return { precoVenda: preco, markup, margemLucro, lucroRS, despFixasRS: preco * despFixas / 100, despVarRS: preco * despVar / 100 };
     } else {
-      // Calcular preço baseado em markup desejado
       if (custo <= 0 || markupIn <= 0) return null;
-      
       const precoCalculado = custo * (1 + markupIn / 100);
       const lucroRS = precoCalculado - custo - (precoCalculado * despFixas / 100) - (precoCalculado * despVar / 100);
       const margemLucro = (lucroRS / precoCalculado) * 100;
-      
-      return {
-        precoVenda: precoCalculado,
-        markup: markupIn,
-        margemLucro,
-        lucroRS,
-        despFixasRS: precoCalculado * despFixas / 100,
-        despVarRS: precoCalculado * despVar / 100,
-        custoTotal: custo + (precoCalculado * despFixas / 100) + (precoCalculado * despVar / 100),
-      };
+      return { precoVenda: precoCalculado, markup: markupIn, margemLucro, lucroRS, despFixasRS: precoCalculado * despFixas / 100, despVarRS: precoCalculado * despVar / 100 };
     }
   }, [modo, custo, despFixas, despVar, lucro, preco, markupIn]);
 
   const modos = [
-    { value: 'markup', label: 'Calcular Preço', icon: '🏷️', desc: 'Quanto cobrar?' },
-    { value: 'margem', label: 'Analisar Preço', icon: '📊', desc: 'Qual meu lucro?' },
-    { value: 'preco', label: 'Definir Markup', icon: '📈', desc: 'Aplicar markup fixo' },
+    { value: 'markup', label: 'Calcular Preço', desc: 'Quanto devo cobrar?', icon: '🎯' },
+    { value: 'margem', label: 'Analisar Preço', desc: 'Qual meu lucro atual?', icon: '📊' },
+    { value: 'preco', label: 'Aplicar Markup', desc: 'Definir % de markup', icon: '📈' },
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100">
-      {/* Header */}
-      <div className="bg-orange-500 text-white py-8 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            💰 Calculadora de Preço de Venda
-          </h1>
-          <p className="text-orange-100 text-lg">
-            Calcule o preço ideal para seus produtos e serviços
-          </p>
-        </div>
+    <main className="min-h-screen bg-[#0c0c0c] text-white relative overflow-hidden">
+      {/* Luxury ambient effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[200px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-orange-500/5 rounded-full blur-[150px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Modo Selection */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            O que você quer calcular?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {modos.map((m) => (
-              <button
-                key={m.value}
-                onClick={() => setModo(m.value as Modo)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  modo === m.value
-                    ? 'border-orange-500 bg-orange-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-2xl mb-1">{m.icon}</div>
-                <div className="font-semibold">{m.label}</div>
-                <div className="text-sm text-gray-500">{m.desc}</div>
-              </button>
-            ))}
+      {/* Top accent line */}
+      <div className="fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+
+      {/* Header */}
+      <header className="relative z-10 pt-16 pb-8 px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full mb-6">
+            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+            <span className="text-amber-400/80 text-xs font-medium tracking-widest uppercase">Calculadora</span>
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+            Preço de <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Venda</span>
+          </h1>
+          <p className="text-white/40 text-lg">
+            Calcule o preço ideal para lucrar de verdade
+          </p>
+        </div>
+      </header>
+
+      <div className="relative z-10 max-w-3xl mx-auto px-6 pb-20">
+        {/* Mode Selector */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          {modos.map((m) => (
+            <button
+              key={m.value}
+              onClick={() => setModo(m.value as Modo)}
+              className={`relative p-5 rounded-2xl text-left transition-all duration-300 group ${
+                modo === m.value
+                  ? 'bg-gradient-to-br from-amber-500/20 to-orange-500/10 border-2 border-amber-500/30'
+                  : 'bg-white/[0.02] border-2 border-white/5 hover:border-white/10'
+              }`}
+            >
+              <span className="text-2xl block mb-2">{m.icon}</span>
+              <span className={`font-semibold block text-sm ${modo === m.value ? 'text-amber-400' : 'text-white/70'}`}>
+                {m.label}
+              </span>
+              <span className="text-white/30 text-xs">{m.desc}</span>
+              {modo === m.value && (
+                <div className="absolute top-3 right-3 w-2 h-2 bg-amber-500 rounded-full" />
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Calculator Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">
-            Preencha os dados
-          </h2>
-
+        {/* Calculator */}
+        <div className="bg-white/[0.02] backdrop-blur border border-white/10 rounded-3xl p-8 mb-8">
           <div className="space-y-6">
-            {/* Custo do Produto */}
+            {/* Cost Input - Always visible */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                💵 Custo do produto/serviço (R$)
+              <label className="block text-white/30 text-xs uppercase tracking-widest mb-3">
+                Custo do Produto
               </label>
-              <input
-                type="text"
-                value={custoProduto}
-                onChange={(e) => setCustoProduto(e.target.value)}
-                placeholder="0,00"
-                className="w-full px-4 py-3 text-xl font-bold border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-0 outline-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Custo de aquisição ou produção
-              </p>
+              <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-amber-500 text-lg">R$</span>
+                <input
+                  type="text"
+                  value={custoProduto}
+                  onChange={(e) => setCustoProduto(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full pl-14 pr-6 py-4 text-2xl font-bold bg-black/30 border-2 border-white/10 rounded-xl focus:border-amber-500/50 outline-none transition-all placeholder:text-white/20"
+                />
+              </div>
             </div>
 
-            {/* Despesas */}
-            <div className="grid md:grid-cols-2 gap-4">
+            {/* Expenses */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  🏢 Despesas fixas (% sobre venda)
+                <label className="block text-white/30 text-xs uppercase tracking-widest mb-3">
+                  Despesas Fixas (%)
                 </label>
                 <input
                   type="text"
                   value={despesasFixas}
                   onChange={(e) => setDespesasFixas(e.target.value)}
-                  placeholder="15"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-5 py-3 bg-black/30 border-2 border-white/10 rounded-xl focus:border-amber-500/50 outline-none transition-all font-mono"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Aluguel, salários, etc.
-                </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📊 Despesas variáveis (% sobre venda)
+                <label className="block text-white/30 text-xs uppercase tracking-widest mb-3">
+                  Despesas Variáveis (%)
                 </label>
                 <input
                   type="text"
                   value={despesasVarPct}
                   onChange={(e) => setDespesasVarPct(e.target.value)}
-                  placeholder="10"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-5 py-3 bg-black/30 border-2 border-white/10 rounded-xl focus:border-amber-500/50 outline-none transition-all font-mono"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Impostos, comissões, taxas
-                </p>
               </div>
             </div>
 
-            {/* Modo específico */}
+            {/* Mode-specific input */}
             {modo === 'markup' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  🎯 Lucro desejado (% sobre venda)
+              <div className="pt-4 border-t border-white/10">
+                <label className="block text-amber-400 text-xs uppercase tracking-widest mb-3">
+                  Lucro Desejado (%)
                 </label>
                 <input
                   type="text"
                   value={lucroDesejado}
                   onChange={(e) => setLucroDesejado(e.target.value)}
-                  placeholder="20"
-                  className="w-full px-4 py-3 text-xl font-bold border-2 border-green-200 rounded-xl focus:border-green-500 bg-green-50"
+                  className="w-full px-5 py-4 text-xl font-bold bg-amber-500/10 border-2 border-amber-500/30 rounded-xl focus:border-amber-500 outline-none transition-all font-mono text-amber-400"
                 />
               </div>
             )}
 
             {modo === 'margem' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  🏷️ Preço de venda atual (R$)
+              <div className="pt-4 border-t border-white/10">
+                <label className="block text-amber-400 text-xs uppercase tracking-widest mb-3">
+                  Preço de Venda Atual (R$)
                 </label>
-                <input
-                  type="text"
-                  value={precoVenda}
-                  onChange={(e) => setPrecoVenda(e.target.value)}
-                  placeholder="0,00"
-                  className="w-full px-4 py-3 text-xl font-bold border-2 border-blue-200 rounded-xl focus:border-blue-500 bg-blue-50"
-                />
+                <div className="relative">
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-amber-500">R$</span>
+                  <input
+                    type="text"
+                    value={precoVenda}
+                    onChange={(e) => setPrecoVenda(e.target.value)}
+                    placeholder="0,00"
+                    className="w-full pl-14 pr-6 py-4 text-xl font-bold bg-amber-500/10 border-2 border-amber-500/30 rounded-xl focus:border-amber-500 outline-none transition-all font-mono text-amber-400"
+                  />
+                </div>
               </div>
             )}
 
             {modo === 'preco' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📈 Markup desejado (%)
+              <div className="pt-4 border-t border-white/10">
+                <label className="block text-amber-400 text-xs uppercase tracking-widest mb-3">
+                  Markup Desejado (%)
                 </label>
                 <input
                   type="text"
                   value={markupInput}
                   onChange={(e) => setMarkupInput(e.target.value)}
                   placeholder="100"
-                  className="w-full px-4 py-3 text-xl font-bold border-2 border-purple-200 rounded-xl focus:border-purple-500 bg-purple-50"
+                  className="w-full px-5 py-4 text-xl font-bold bg-amber-500/10 border-2 border-amber-500/30 rounded-xl focus:border-amber-500 outline-none transition-all font-mono text-amber-400"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Markup de 100% = dobrar o preço
-                </p>
               </div>
             )}
           </div>
@@ -249,128 +206,83 @@ export default function Home() {
 
         {/* Results */}
         {resultado && !('error' in resultado) && (
-          <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl shadow-xl p-6 mb-8 text-white">
-            <h3 className="text-xl font-bold mb-4 text-center">📊 Resultado</h3>
-            
-            <div className="bg-white/20 rounded-xl p-6 mb-4">
-              <div className="text-center">
-                <div className="text-sm opacity-75 mb-1">Preço de Venda Ideal</div>
-                <div className="text-4xl font-bold">{formatCurrency(resultado.precoVenda)}</div>
+          <>
+            {/* Price Hero */}
+            <div className="relative bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-transparent border border-amber-500/20 rounded-3xl p-8 mb-8 overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl" />
+              <div className="relative">
+                <p className="text-white/40 text-sm uppercase tracking-widest mb-2">Preço de Venda Ideal</p>
+                <p className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">
+                  {formatCurrency(resultado.precoVenda)}
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white/10 rounded-lg p-3 text-center">
-                <div className="text-xs opacity-75">Markup</div>
-                <div className="text-lg font-bold">{formatPercent(resultado.markup)}</div>
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[
+                { label: 'Markup', value: `${resultado.markup.toFixed(1)}%`, color: 'text-white' },
+                { label: 'Margem', value: `${resultado.margemLucro.toFixed(1)}%`, color: 'text-white' },
+                { label: 'Lucro', value: formatCurrency(resultado.lucroRS), color: 'text-emerald-400' },
+                { label: 'Desp. Total', value: formatCurrency(resultado.despFixasRS + resultado.despVarRS), color: 'text-rose-400' },
+              ].map((metric) => (
+                <div key={metric.label} className="bg-white/[0.02] border border-white/10 rounded-2xl p-5">
+                  <p className="text-white/30 text-xs uppercase tracking-widest mb-1">{metric.label}</p>
+                  <p className={`text-xl font-bold font-mono ${metric.color}`}>{metric.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Breakdown */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-2xl overflow-hidden">
+              <div className="p-5 border-b border-white/10">
+                <h3 className="font-semibold text-white/70">Composição do Preço</h3>
               </div>
-              <div className="bg-white/10 rounded-lg p-3 text-center">
-                <div className="text-xs opacity-75">Margem de Lucro</div>
-                <div className="text-lg font-bold">{formatPercent(resultado.margemLucro)}</div>
-              </div>
-              <div className="bg-white/10 rounded-lg p-3 text-center">
-                <div className="text-xs opacity-75">Lucro (R$)</div>
-                <div className="text-lg font-bold">{formatCurrency(resultado.lucroRS)}</div>
-              </div>
-              <div className="bg-white/10 rounded-lg p-3 text-center">
-                <div className="text-xs opacity-75">Custo Total</div>
-                <div className="text-lg font-bold">{formatCurrency(resultado.custoTotal)}</div>
+              <div className="divide-y divide-white/5">
+                {[
+                  { label: 'Custo do produto', value: formatCurrency(custo), type: 'neutral' },
+                  { label: `Despesas fixas (${despFixas}%)`, value: formatCurrency(resultado.despFixasRS), type: 'expense' },
+                  { label: `Despesas variáveis (${despVar}%)`, value: formatCurrency(resultado.despVarRS), type: 'expense' },
+                  { label: 'Lucro líquido', value: formatCurrency(resultado.lucroRS), type: 'profit' },
+                ].map((row) => (
+                  <div key={row.label} className={`flex justify-between items-center px-5 py-4 ${row.type === 'profit' ? 'bg-emerald-500/5' : ''}`}>
+                    <span className="text-white/50">{row.label}</span>
+                    <span className={`font-mono font-semibold ${
+                      row.type === 'profit' ? 'text-emerald-400' : row.type === 'expense' ? 'text-white/40' : 'text-white'
+                    }`}>
+                      {row.type === 'expense' ? `- ${row.value}` : row.value}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center px-5 py-5 bg-amber-500/10">
+                  <span className="font-semibold text-amber-400">PREÇO DE VENDA</span>
+                  <span className="font-mono font-bold text-xl text-amber-400">{formatCurrency(resultado.precoVenda)}</span>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {resultado && 'error' in resultado && (
-          <div className="bg-red-100 border border-red-300 rounded-xl p-4 mb-8 text-red-700">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-5 text-rose-400">
             ⚠️ {resultado.error}
           </div>
         )}
 
-        {/* Composition Breakdown */}
-        {resultado && !('error' in resultado) && (
-          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              📋 Composição do Preço
-            </h3>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Custo do produto</span>
-                <span className="font-semibold">{formatCurrency(custo)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Despesas fixas ({despFixas}%)</span>
-                <span className="font-semibold text-red-600">- {formatCurrency(resultado.despFixasRS)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Despesas variáveis ({despVar}%)</span>
-                <span className="font-semibold text-red-600">- {formatCurrency(resultado.despVarRS)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b bg-green-50 -mx-6 px-6">
-                <span className="text-green-700 font-semibold">Lucro líquido</span>
-                <span className="font-bold text-green-600">{formatCurrency(resultado.lucroRS)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 bg-orange-50 -mx-6 px-6 rounded-b-xl">
-                <span className="text-orange-700 font-bold">PREÇO DE VENDA</span>
-                <span className="font-bold text-orange-600 text-xl">{formatCurrency(resultado.precoVenda)}</span>
-              </div>
+        {/* Empty state */}
+        {!resultado && (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center text-4xl">
+              💰
             </div>
+            <p className="text-white/40">Digite o custo do produto para calcular</p>
           </div>
         )}
 
-        {/* Info Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="text-2xl">📈</span> O que é Markup?
-            </h4>
-            <p className="text-gray-600 text-sm">
-              Markup é o percentual adicionado ao custo para formar o preço de venda. 
-              Um markup de 100% significa que você dobra o custo.
-            </p>
-            <div className="mt-3 bg-gray-50 rounded-lg p-3 text-sm">
-              <strong>Fórmula:</strong> Markup = ((Preço - Custo) / Custo) × 100
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span className="text-2xl">💡</span> O que é Margem?
-            </h4>
-            <p className="text-gray-600 text-sm">
-              Margem de lucro é o percentual do preço de venda que representa seu lucro. 
-              Uma margem de 20% significa que de cada R$100 vendido, R$20 é lucro.
-            </p>
-            <div className="mt-3 bg-gray-50 rounded-lg p-3 text-sm">
-              <strong>Fórmula:</strong> Margem = (Lucro / Preço) × 100
-            </div>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl shadow-xl p-8 text-white text-center">
-          <h3 className="text-2xl font-bold mb-3">
-            🧮 É MEI? Calcule seus impostos!
-          </h3>
-          <p className="text-orange-100 mb-6">
-            Descubra quanto você paga de DAS e se vale a pena ser MEI.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href="https://curva-abc-app.vercel.app"
-              target="_blank"
-              className="bg-white text-orange-600 px-6 py-3 rounded-xl font-semibold hover:bg-orange-50 transition-colors"
-            >
-              🎯 Curva ABC
-            </a>
-          </div>
-        </div>
-
         {/* Footer */}
-        <footer className="mt-12 text-center text-gray-500 text-sm">
-          <p>Calculadora de Preço © 2025</p>
-          <p className="mt-1">
-            Esta ferramenta é informativa. Consulte um contador para precificação estratégica.
+        <footer className="mt-16 pt-8 border-t border-white/10 text-center">
+          <p className="text-white/20 text-sm">
+            Calculadora de Preço © 2025 • Ferramenta informativa
           </p>
         </footer>
       </div>
