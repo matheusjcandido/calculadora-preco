@@ -279,6 +279,26 @@ export default function Home() {
           </div>
         )}
 
+        {/* CTA Banner */}
+        <div className="mt-16 bg-white/[0.03] backdrop-blur border border-amber-500/20 rounded-3xl p-8 text-center">
+          <p className="text-2xl mb-3">🤖</p>
+          <p className="text-white/80 text-lg font-medium mb-2">
+            Quer automatizar seu trabalho com IA?
+          </p>
+          <p className="text-white/50 mb-6 max-w-lg mx-auto">
+            Conheça o Kit Primeiro Agente — guia completo pra criar seu assistente de IA pessoal do zero.
+          </p>
+          <a
+            href="https://pay.kiwify.com.br/sCqZ6r1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-amber-500/20"
+          >
+            Conhecer o Kit →
+          </a>
+          <p className="text-white/25 text-xs mt-4">Ferramentas gratuitas por Claudio Tools</p>
+        </div>
+
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-white/10 text-center">
           <p className="text-white/20 text-sm">
