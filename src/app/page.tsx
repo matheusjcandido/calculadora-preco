@@ -282,7 +282,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-white/10 text-center">
           <p className="text-white/20 text-sm">
-            Calculadora de Preço © 2025 • Ferramenta informativa
+            Calculadora de Preço © 2026 • Ferramenta informativa
           </p>
         </footer>
       </div>
